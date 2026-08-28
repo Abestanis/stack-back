@@ -89,8 +89,10 @@ jobs:
         id: meta
         run: |
           TAG=${{ steps.version.outputs.new_tag }}
+          REGISTRY=${{ env.REGISTRY }}
           echo "version=${TAG#v}" >> $GITHUB_OUTPUT
           echo "timestamp=$(date -u +'%Y-%m-%dT%H:%M:%S.000Z')" >> $GITHUB_OUTPUT
+          echo "registry=${REGISTRY,,}" >> $GITHUB_OUTPUT
 
       - name: Build and push Docker image
         id: push
@@ -100,9 +102,9 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}
-            ${{ steps.changed.outcome == 'success' && format('{0}/{1}:latest', env.REGISTRY, env.IMAGE_NAME) || null }}
-            ${{ steps.changed.outcome == 'success' && format('{0}/{1}:{2}', env.REGISTRY, env.IMAGE_NAME, steps.version.outputs.new_tag) || null }}
+            ${{ steps.meta.outputs.registry }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}
+            ${{ steps.changed.outcome == 'success' && format('{0}/{1}:latest', steps.meta.outputs.registry, env.IMAGE_NAME) || null }}
+            ${{ steps.changed.outcome == 'success' && format('{0}/{1}:{2}', steps.meta.outputs.registry, env.IMAGE_NAME, steps.version.outputs.new_tag) || null }}
           labels: |
             org.opencontainers.image.title=${{ github.event.repository.name }}
             org.opencontainers.image.url=${{ github.repositoryUrl }}
